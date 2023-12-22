@@ -1,37 +1,90 @@
 use std::collections::HashMap;
+use std::str::FromStr;
+use std::fmt;
 
+#[derive(Debug, PartialEq)]
+pub enum Method {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    HEAD,
+    CONNECT,
+    OPTIONS,
+    TRACE,
+    PATCH
+}
+
+impl fmt::Display for Method {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            Method::GET => "GET",
+            Method::POST => "POST",
+            Method::PUT => "PUT",
+            Method::DELETE => "DELETE",
+            Method::HEAD => "HEAD",
+            Method::CONNECT => "CONNECT",
+            Method::OPTIONS => "OPTIONS",
+            Method::TRACE => "TRACE",
+            Method::PATCH => "PATCH"
+        })
+    }
+}
+
+impl FromStr for Method {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "GET" => Ok(Method::GET),
+            "POST" => Ok(Method::POST),
+            "PUT" => Ok(Method::PUT),
+            "DELETE" => Ok(Method::DELETE),
+            "HEAD" => Ok(Method::HEAD),
+            "CONNECT" => Ok(Method::CONNECT),
+            "OPTIONS" => Ok(Method::OPTIONS),
+            "TRACE" => Ok(Method::TRACE),
+            "PATCH" => Ok(Method::PATCH),
+            _ => Err("Invalid HTTP method"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Request {
-    method: String,
-    uri: String,
-    http_version: String,
-    headers: HashMap<String, String>,
-    body: Option<String>,
+    pub method: Method,
+    pub uri: String,
+    pub http_version: String,
+    pub headers: HashMap<String, String>,
+    pub body: Option<String>,
 }
 
 impl Request {
     pub fn parse(raw_request: &str) -> Result<Request, &'static str> {
         let mut lines = raw_request.lines();
 
-        // Parse the request line
         let request_line = lines.next().ok_or("Request line missing")?;
-        let mut parts = request_line.split_whitespace();
-        let method = parts.next().ok_or("Method missing")?.to_string();
-        let uri = parts.next().ok_or("URI missing")?.to_string();
-        let http_version = parts.next().ok_or("HTTP version missing")?.to_string();
+        let parts: Vec<&str> = request_line.split_whitespace().collect();
+        if parts.len() != 3 {
+            return Err("Invalid request line");
+        }
 
-        // Parse headers
+        let method = parts[0].parse()?;
+        let uri = parts[1].to_string();
+        let http_version = parts[2].to_string();
+
         let mut headers = HashMap::new();
         for line in lines.by_ref() {
             if line.is_empty() {
-                break; // End of headers
+                break;
             }
-            let mut parts = line.splitn(2, ':');
-            let key = parts.next().ok_or("Header key missing")?.trim().to_string();
-            let value = parts.next().ok_or("Header value missing")?.trim().to_string();
-            headers.insert(key, value);
+            let parts: Vec<&str> = line.splitn(2, ':').collect();
+            if parts.len() != 2 {
+                return Err("Invalid header format");
+            }
+            headers.insert(parts[0].trim().to_owned(), parts[1].trim().to_owned());
         }
 
-        // Parse body if present
         let body = lines.next().map(|s| s.to_string());
 
         Ok(Request {

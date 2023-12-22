@@ -1,32 +1,48 @@
-use std::net::TcpListener;
-use std::thread;
-
 mod request;
 mod response;
-mod header;
+mod router;
 mod connection;
+mod server;
 
-fn main() -> std::io::Result<()> {
-    // Specify the address and port to listen on
-    let address = "127.0.0.1:8080";
-    let listener = TcpListener::bind(address)?;
+use server::HttpServer;
+use request::Request;
+use response::Response;
+use response::StatusCode;
+use server::ServerBuilder;
 
-    println!("HTTP server running on http://{}", address);
+use std::sync::Arc;
 
-    // Accept incoming TCP connections and handle them in separate threads
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                // Spawn a new thread for each connection
-                thread::spawn(move || {
-                    if let Err(e) = connection::handle_connection(stream) {
-                        eprintln!("Failed to handle connection: {}", e);
-                    }
-                });
-            }
-            Err(e) => eprintln!("Connection failed: {}", e),
-        }
-    }
+fn main() {
+     let server = ServerBuilder::new()
+        .get("/", |req| {
+            let mut response = Response::new();
+            response.status(StatusCode::OK)
+                    .set_body("Hello, World!");
+            response
+        })
+        .get("/about", |req| {
+            let mut response = Response::new();
+            response.status(StatusCode::OK)
+                    .set_body("About Us");
+            response
+        })
+        .post("/data", |req| {
+            let mut response = Response::new();
+            let data = req.body.clone().unwrap_or_else(|| "No data provided".to_string());
+            response.status(StatusCode::OK)
+                    .set_body(&format!("Received data: {}", data));
+            response
+        })
+        .delete("/reset", |req| {
+            let mut response = Response::new();
+            response.status(StatusCode::OK)
+                    .set_body("Resetting server");
+            response
+        })
+        .build();
 
-    Ok(())
+    // Start the server on port 3000
+    server.listen(3000, || {
+        println!("Server is running on http://localhost:3000");
+    });
 }

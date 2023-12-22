@@ -1,36 +1,76 @@
+use std::collections::HashMap;
 use std::io::{Write, Result};
 use std::net::TcpStream;
-use std::collections::HashMap;
+use std::fmt;
+
+#[derive(Debug, Clone, Copy)]
+pub enum StatusCode {
+    OK = 200,
+    BadRequest = 400,
+    NotFound = 404,
+    InternalServerError = 500
+}
+
+impl fmt::Display for StatusCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match self {
+            StatusCode::OK => "200 OK",
+            StatusCode::BadRequest => "400 Bad Request",
+            StatusCode::NotFound => "404 Not Found",
+            StatusCode::InternalServerError => "500 Internal Server Error",
+            
+        })
+    }
+}
+
+impl fmt::Display for Response {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Format the response as a string
+        // Example:
+        write!(f, "HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase)?;
+        for (key, value) in &self.headers {
+            write!(f, "{}: {}\r\n", key, value)?;
+        }
+        if let Some(body) = &self.body {
+            write!(f, "\r\n{}", body)?;
+        }
+        Ok(())
+    }
+}
 
 pub struct Response {
-    status_code: u16,
+    status_code: StatusCode,
     reason_phrase: String,
     headers: HashMap<String, String>,
     body: Option<String>,
 }
 
 impl Response {
-    // Create a new Response object with a status code and a reason phrase
-    pub fn new(status_code: u16, reason_phrase: &str) -> Self {
+    pub fn new() -> Self {
         Response {
-            status_code,
-            reason_phrase: reason_phrase.to_string(),
+            status_code: StatusCode::OK,
+            reason_phrase: "OK".to_string(), 
             headers: HashMap::new(),
             body: None,
         }
     }
 
-    // Add or update a header
-    pub fn set_header(&mut self, key: &str, value: &str) {
+    pub fn status(&mut self, code: StatusCode) -> &mut Self {
+        self.status_code = code;
+        self
+    }
+
+    pub fn set_header(&mut self, key: &str, value: &str) -> &mut Self {
         self.headers.insert(key.to_string(), value.to_string());
+        self
     }
 
-    // Set the response body
-    pub fn set_body(&mut self, body: &str) {
+    pub fn set_body(&mut self, body: &str) -> &mut Self {
         self.body = Some(body.to_string());
+        self.set_header("Content-Length", &body.len().to_string());
+        self
     }
 
-    // Send the response to the client
     pub fn send(&self, stream: &mut TcpStream) -> Result<()> {
         let mut response = format!(
             "HTTP/1.1 {} {}\r\n",

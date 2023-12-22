@@ -1,40 +1,55 @@
-use std::io::{Read, Write, Result};
+use std::io::{Read, Result, Write};
 use std::net::TcpStream;
+use std::sync::Arc;
 
 use crate::request::Request;
-use crate::response::Response;
-use crate::header::Header;
+use crate::response::{Response, StatusCode};
+use crate::router::Router;
 
-pub fn handle_connection(mut stream: TcpStream) -> Result<()> {
+pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) -> Result<()> {
     let mut buffer = [0; 1024];
+    let mut total_read = 0;
 
-    // Read the request from the TCP stream
-    stream.read(&mut buffer)?;
+    // Read the request from the stream
+    loop {
+        match stream.read(&mut buffer[total_read..]) {
+            Ok(0) => break,  // End of stream reached
+            Ok(n) => {
+                total_read += n;
+                if total_read >= 4 && buffer[total_read-4..total_read] == [13, 10, 13, 10] {
+                    // Checks for "\r\n\r\n", indicating end of HTTP header
+                    break;
+                }
+            },
+            Err(e) => return Err(e),
+        }
 
-    // Convert buffer to a string and parse the HTTP request
-    let raw_request = String::from_utf8_lossy(&buffer);
+        if total_read == buffer.len() {
+            // Buffer is full, but no end of header found
+            return send_error_response(&mut stream, StatusCode::BadRequest, "Request Too Large");
+        }
+    }
+
+    // Parse the request
+    let raw_request = String::from_utf8(buffer[..total_read].to_vec()).unwrap();
     let request = match Request::parse(&raw_request) {
         Ok(req) => req,
-        Err(e) => {
-            eprintln!("Failed to parse request: {}", e);
-            return send_error_response(&mut stream, 400, "Bad Request");
-        }
+        Err(_) => return send_error_response(&mut stream, StatusCode::BadRequest, "Bad Request"),
     };
 
-    // Process the request and prepare the response
-    // This is where you would add more complex logic based on the request
-    let mut response = Response::new(200, "OK");
-    response.set_header("Content-Type", "text/plain");
-    response.set_body("Hello, world!");
-
-    // Send the response back to the client
-    response.send(&mut stream)
+    // Route the request to the appropriate handler
+    if let Some(handler) = router.route(&request) {
+        let response = handler(&request);
+        response.send(&mut stream)
+    } else {
+        send_error_response(&mut stream, StatusCode::NotFound, "Not Found")
+    }
 }
 
 // Utility function to send error responses
-fn send_error_response(stream: &mut TcpStream, status_code: u16, reason_phrase: &str) -> Result<()> {
-    let mut response = Response::new(status_code, reason_phrase);
-    response.set_header("Content-Type", "text/plain");
-    response.set_body(reason_phrase);
+fn send_error_response(stream: &mut TcpStream, status_code: StatusCode, reason_phrase: &str) -> Result<()> {
+    let mut response = Response::new();
+    response.status(status_code)
+            .set_body(reason_phrase);
     response.send(stream)
 }
