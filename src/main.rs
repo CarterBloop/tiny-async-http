@@ -33,6 +33,12 @@ fn main() {
                     .set_body(&format!("Received data: {}", data));
             response
         })
+        .put("/data", |req| {
+            let mut response = Response::new();
+            response.status(StatusCode::OK)
+                    .set_body("Updating data");
+            response
+        })
         .delete("/reset", |req| {
             let mut response = Response::new();
             response.status(StatusCode::OK)
