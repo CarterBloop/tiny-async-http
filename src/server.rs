@@ -1,10 +1,10 @@
-use std::net::{TcpListener, TcpStream};
-use std::thread;
+use std::net::TcpListener;
 use std::sync::Arc;
+use std::thread;
 
-use crate::{Request, Response };
-use crate::router::Router;
 use crate::connection::handle_connection;
+use crate::router::Router;
+use crate::{Request, Response};
 
 pub struct HttpServer {
     router: Arc<Router>,
@@ -21,7 +21,7 @@ impl ServerBuilder {
         }
     }
 
-    pub fn get<F>(mut self, route: &str, handler: F) -> Self 
+    pub fn get<F>(mut self, route: &str, handler: F) -> Self
     where
         F: Fn(&Request) -> Response + 'static + Send + Sync,
     {
@@ -29,7 +29,7 @@ impl ServerBuilder {
         self
     }
 
-    pub fn post<F>(mut self, route: &str, handler: F) -> Self 
+    pub fn post<F>(mut self, route: &str, handler: F) -> Self
     where
         F: Fn(&Request) -> Response + 'static + Send + Sync,
     {
@@ -37,7 +37,7 @@ impl ServerBuilder {
         self
     }
 
-    pub fn put<F>(mut self, route: &str, handler: F) -> Self 
+    pub fn put<F>(mut self, route: &str, handler: F) -> Self
     where
         F: Fn(&Request) -> Response + 'static + Send + Sync,
     {
@@ -45,7 +45,7 @@ impl ServerBuilder {
         self
     }
 
-    pub fn delete<F>(mut self, route: &str, handler: F) -> Self 
+    pub fn delete<F>(mut self, route: &str, handler: F) -> Self
     where
         F: Fn(&Request) -> Response + 'static + Send + Sync,
     {
@@ -61,21 +61,18 @@ impl ServerBuilder {
 }
 
 impl HttpServer {
-    pub fn new(router: Arc<Router>) -> Self {
-        HttpServer {
-            router,
-        }
-    }
-
     pub fn listen(&self, port: u16, on_start: impl FnOnce()) {
         let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).unwrap();
         on_start();
 
         for stream in listener.incoming() {
             let stream = stream.unwrap();
-            let router = self.router.clone(); 
+            let router = self.router.clone();
             thread::spawn(move || {
-                handle_connection(stream, router);
+                let result = handle_connection(stream, router);
+                if let Err(e) = result {
+                    println!("Error: {}", e);
+                }
             });
         }
     }

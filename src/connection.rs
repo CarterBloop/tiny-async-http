@@ -1,9 +1,9 @@
-use std::io::{Read, Write, BufReader, BufRead};
-use std::net::TcpStream;
-use std::sync::Arc;
 use crate::request::Request;
 use crate::response::{Response, StatusCode};
 use crate::router::Router;
+use std::io::{BufRead, BufReader, Read};
+use std::net::TcpStream;
+use std::sync::Arc;
 
 pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) -> std::io::Result<()> {
     let mut reader = BufReader::new(&stream);
@@ -48,7 +48,7 @@ pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) -> std::io:
     }
 
     // Construct complete request object
-    let mut request = Request {
+    let request = Request {
         body: Some(body),
         ..request
     };
@@ -63,9 +63,12 @@ pub fn handle_connection(mut stream: TcpStream, router: Arc<Router>) -> std::io:
 }
 
 // Utility function to send error responses
-fn send_error_response(stream: &mut TcpStream, status_code: StatusCode, reason_phrase: &str) -> std::io::Result<()> {
+fn send_error_response(
+    stream: &mut TcpStream,
+    status_code: StatusCode,
+    reason_phrase: &str,
+) -> std::io::Result<()> {
     let mut response = Response::new();
-    response.status(status_code)
-            .set_body(reason_phrase);
+    response.status(status_code).set_body(reason_phrase);
     response.send(stream)
 }

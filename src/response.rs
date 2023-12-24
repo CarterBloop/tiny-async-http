@@ -1,25 +1,28 @@
 use std::collections::HashMap;
-use std::io::{Write, Result};
-use std::net::TcpStream;
 use std::fmt;
+use std::io::{Result, Write};
+use std::net::TcpStream;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StatusCode {
     OK = 200,
     BadRequest = 400,
     NotFound = 404,
-    InternalServerError = 500
+    InternalServerError = 500,
 }
 
 impl fmt::Display for StatusCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match self {
-            StatusCode::OK => "200 OK",
-            StatusCode::BadRequest => "400 Bad Request",
-            StatusCode::NotFound => "404 Not Found",
-            StatusCode::InternalServerError => "500 Internal Server Error",
-            
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                StatusCode::OK => "200 OK",
+                StatusCode::BadRequest => "400 Bad Request",
+                StatusCode::NotFound => "404 Not Found",
+                StatusCode::InternalServerError => "500 Internal Server Error",
+            }
+        )
     }
 }
 
@@ -27,7 +30,11 @@ impl fmt::Display for Response {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Format the response as a string
         // Example:
-        write!(f, "HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase)?;
+        write!(
+            f,
+            "HTTP/1.1 {} {}\r\n",
+            self.status_code, self.reason_phrase
+        )?;
         for (key, value) in &self.headers {
             write!(f, "{}: {}\r\n", key, value)?;
         }
@@ -49,7 +56,7 @@ impl Response {
     pub fn new() -> Self {
         Response {
             status_code: StatusCode::OK,
-            reason_phrase: "OK".to_string(), 
+            reason_phrase: "OK".to_string(),
             headers: HashMap::new(),
             body: None,
         }
@@ -72,10 +79,7 @@ impl Response {
     }
 
     pub fn send(&self, stream: &mut TcpStream) -> Result<()> {
-        let mut response = format!(
-            "HTTP/1.1 {} {}\r\n",
-            self.status_code, self.reason_phrase
-        );
+        let mut response = format!("HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase);
 
         for (key, value) in &self.headers {
             response.push_str(&format!("{}: {}\r\n", key, value));

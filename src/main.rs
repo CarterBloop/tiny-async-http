@@ -1,48 +1,57 @@
+mod connection;
 mod request;
 mod response;
 mod router;
-mod connection;
 mod server;
 
-use server::HttpServer;
 use request::Request;
 use response::Response;
 use response::StatusCode;
 use server::ServerBuilder;
 
-use std::sync::Arc;
-
 fn main() {
-     let server = ServerBuilder::new()
-        .get("/", |req| {
+    let server = ServerBuilder::new()
+        .get("/", |_req| {
             let mut response = Response::new();
-            response.status(StatusCode::OK)
-                    .set_body("Hello, World!");
+            response.status(StatusCode::OK).set_body("Hello, World!");
             response
         })
-        .get("/about", |req| {
+        .get("/about", |_req| {
             let mut response = Response::new();
-            response.status(StatusCode::OK)
-                    .set_body("About Us");
+            response.status(StatusCode::OK).set_body("About Us");
             response
         })
         .post("/data", |req| {
             let mut response = Response::new();
-            let data = req.body.clone().unwrap_or_else(|| "No data provided".to_string());
-            response.status(StatusCode::OK)
-                    .set_body(&format!("Received data: {}", data));
+            let data = req
+                .body
+                .clone()
+                .unwrap_or_else(|| "No data provided".to_string());
+            response
+                .status(StatusCode::OK)
+                .set_body(&format!("Received data: {}", data));
             response
         })
         .put("/data", |req| {
             let mut response = Response::new();
-            response.status(StatusCode::OK)
-                    .set_body("Updating data");
+            let data = req
+                .body
+                .clone()
+                .unwrap_or_else(|| "No data provided".to_string());
+            response
+                .status(StatusCode::OK)
+                .set_body(&format!("Updating data: {}", data));
             response
         })
         .delete("/reset", |req| {
             let mut response = Response::new();
-            response.status(StatusCode::OK)
-                    .set_body("Resetting server");
+            let data = req
+                .body
+                .clone()
+                .unwrap_or_else(|| "No data provided".to_string());
+            response
+                .status(StatusCode::OK)
+                .set_body(&format!("Deleting data: {}", data));
             response
         })
         .build();
