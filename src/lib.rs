@@ -5,7 +5,8 @@ pub mod response;
 pub mod router;
 pub mod server;
 
-pub use connection::handle_connection;
+// pub use connection::handle_connection;
+pub use connection::handle_connection_async;
 pub use header::Header;
 pub use request::Request;
 pub use response::Response;

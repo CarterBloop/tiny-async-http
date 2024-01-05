@@ -1,8 +1,8 @@
-use std::net::TcpListener;
+use tokio::net::TcpListener;
 use std::sync::Arc;
-use std::thread;
+use tokio::task;
 
-use crate::connection::handle_connection;
+use crate::connection::handle_connection_async;
 use crate::router::Router;
 use crate::{Request, Response};
 
@@ -61,15 +61,16 @@ impl ServerBuilder {
 }
 
 impl HttpServer {
-    pub fn listen(&self, port: u16, on_start: impl FnOnce()) {
-        let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).unwrap();
+    pub async fn listen(&self, port: u16, on_start: impl FnOnce()) {
+        let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).await.unwrap();
         on_start();
 
-        for stream in listener.incoming() {
-            let stream = stream.unwrap();
+        loop {
+            let (stream, _) = listener.accept().await.unwrap();
             let router = self.router.clone();
-            thread::spawn(move || {
-                let result = handle_connection(stream, router);
+
+            task::spawn(async move {
+                let result = handle_connection_async(stream, router).await;
                 if let Err(e) = result {
                     println!("Error: {}", e);
                 }

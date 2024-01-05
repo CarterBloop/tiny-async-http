@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::io::{Result, Write};
-use std::net::TcpStream;
+use tokio::io::{self, AsyncWrite, AsyncWriteExt};
+use tokio::net::TcpStream;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StatusCode {
@@ -78,7 +78,10 @@ impl Response {
         self
     }
 
-    pub fn send(&self, stream: &mut TcpStream) -> Result<()> {
+    pub async fn send_async<W>(&self, writer: &mut W) -> io::Result<()>
+    where
+        W: AsyncWrite + Unpin,
+    {
         let mut response = format!("HTTP/1.1 {} {}\r\n", self.status_code, self.reason_phrase);
 
         for (key, value) in &self.headers {
@@ -91,8 +94,8 @@ impl Response {
             response.push_str(body);
         }
 
-        stream.write_all(response.as_bytes())?;
-        stream.flush()?;
+        writer.write_all(response.as_bytes()).await?;
+        writer.flush().await?;
         Ok(())
     }
 }
