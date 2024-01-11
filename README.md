@@ -33,7 +33,7 @@ To use the library from a git repository:
 
     ```toml
     [dependencies]
-    tiny-async-http = { git = "https://github.com/yourusername/tiny-async-http.git" }
+    tiny-async-http = { git = "https://github.com/CarterBloop/tiny-async-http.git" }
     ```
 
 ## Quick Start

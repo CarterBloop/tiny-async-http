@@ -3,14 +3,6 @@
 version = 3
 
 [[package]]
-name = "HTTP"
-version = "0.1.0"
-dependencies = [
- "reqwest",
- "tokio",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -804,6 +796,14 @@ dependencies = [
  "redox_syscall",
  "rustix",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "tiny_async_http"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "tokio",
 ]
 
 [[package]]
