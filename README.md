@@ -4,11 +4,11 @@
 
 ## Features
 
-- **Asynchronous Processing**: Fully asynchronous handling of HTTP requests and responses.
-- **Modular Design**: Organized into clear modules: connection, header, request, response, router, and server.
-- **Express.js Inspired API**: Familiar and easy-to-use API for those accustomed to Express.js.
-- **Custom Routing**: Simple and flexible routing with support for various HTTP methods (GET, POST, PUT, DELETE, etc.).
-- **Request and Response Handling**: Comprehensive handling of HTTP requests and responses including headers, body, and status codes.
+- **Asynchronous Processing**
+- **Modular Design**
+- **Express.js Inspired API**
+- **Custom Routing**
+- **Request and Response Handling**
 
 ## Installation
 
@@ -89,5 +89,3 @@ Contributions are welcome! If you'd like to contribute to `tiny-async-http`, ple
 `tiny-async-http` is open source and is licensed under the MIT License.
 
 ---
-
-This README template provides a comprehensive overview of your library, its usage, and its structure. You can modify it to include more specific examples, advanced usage, or any additional information you deem necessary.
